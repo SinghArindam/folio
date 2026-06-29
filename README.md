@@ -13,6 +13,11 @@
 </p>
 
 <p align="center">
+  <a href="https://singharindam.github.io/folio/"><strong>🚀 Live Demo — singharindam.github.io/folio</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://singharindam.github.io/folio/"><img src="https://img.shields.io/badge/Live_Demo-Visit_Reader-C4572A?style=for-the-badge&logo=github&logoColor=white" alt="Live Demo"></a>
   <a href="https://github.com/SinghArindam/folio/stargazers"><img src="https://img.shields.io/github/stars/SinghArindam/folio?style=for-the-badge&logo=github&color=C4572A&logoColor=white" alt="Stars"></a>
   <a href="https://github.com/SinghArindam/folio/network/members"><img src="https://img.shields.io/github/forks/SinghArindam/folio?style=for-the-badge&logo=git&color=D49B18&logoColor=white" alt="Forks"></a>
   <a href="https://github.com/SinghArindam/folio/issues"><img src="https://img.shields.io/github/issues/SinghArindam/folio?style=for-the-badge&logo=github&color=E07A4A&logoColor=white" alt="Issues"></a>
@@ -20,10 +25,10 @@
 </p>
 
 <p align="center">
+  <a href="https://singharindam.github.io/folio/"><img src="https://img.shields.io/badge/Website-Live_on_GitHub_Pages-5A8A5A?style=flat-square&logo=github-pages&logoColor=white" alt="Live Website"></a>
   <a href="https://github.com/SinghArindam/folio"><img src="https://img.shields.io/badge/Framework-None_(Vanilla)-1E160A?style=flat-square&logo=javascript&logoColor=EFB93A" alt="Vanilla JS"></a>
   <a href="https://github.com/SinghArindam/folio"><img src="https://img.shields.io/badge/Size-~130KB_total-C4572A?style=flat-square&logo=webpack&logoColor=white" alt="Size"></a>
   <a href="https://github.com/SinghArindam/folio"><img src="https://img.shields.io/badge/Build-Zero_Steps-5A8A5A?style=flat-square&logo=checkmarx&logoColor=white" alt="Zero Build"></a>
-  <a href="https://github.com/SinghArindam/folio"><img src="https://img.shields.io/badge/Hosting-GitHub_Pages-1F160C?style=flat-square&logo=github-pages&logoColor=white" alt="GitHub Pages"></a>
   <a href="https://github.com/SinghArindam/folio/commits/main"><img src="https://img.shields.io/github/last-commit/SinghArindam/folio?style=flat-square&color=6B5438" alt="Last Commit"></a>
   <a href="https://github.com/SinghArindam/folio"><img src="https://img.shields.io/github/repo-size/SinghArindam/folio?style=flat-square&color=AA9070" alt="Repo Size"></a>
   <img src="https://komarev.com/ghpvc/?username=SinghArindam&label=Profile%20Views&color=C4572A&style=flat-square" alt="Profile Views">
