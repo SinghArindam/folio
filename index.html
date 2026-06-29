@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="folio — a blazing-fast, magazine-styled static book reader for Markdown content">
+  <title>folio — Book Reader</title>
+
+  <!-- Fonts: Lora (body), Playfair Display (display), Inter (UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+  <!-- marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* ========================================
+       DESIGN TOKENS & THEME VARIABLES
+       ======================================== */
+
+    :root {
+      /* Light theme (default) */
+      --bg-page:      #FAF7F2;
+      --bg-surface:   #F3EDE0;
+      --bg-sidebar:   #EAE2D0;
+      --border:       rgba(160, 120, 70, 0.16);
+      --text-primary: #1E160A;
+      --text-secondary: #6B5438;
+      --text-muted:   #9C7E5C;
+      --accent:       #C4572A;
+      --accent-hover: #A03D18;
+      --accent-bg:    #FAEAE2;
+
+      /* Fonts */
+      --font-body:    'Lora', Georgia, serif;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-ui:      'Inter', -apple-system, sans-serif;
+
+      /* Sizing */
+      --font-size-body: 17px;
+      --line-height-body: 1.85;
+      --content-max-w: 680px;
+      --sidebar-w:    260px;
+      --topbar-h:     48px;
+      --bottombar-h:  52px;
+    }
+
+    html.theme-dark {
+      --bg-page:      #17110A;
+      --bg-surface:   #1F160C;
+      --bg-sidebar:   #130E07;
+      --border:       rgba(200, 160, 100, 0.12);
+      --text-primary: #EAE0D2;
+      --text-secondary: #9C7E5C;
+      --text-muted:   #6B5438;
+      --accent:       #E07A4A;
+      --accent-hover: #F08A5A;
+      --accent-bg:    #3D2010;
+    }
+
+    html.theme-amoled {
+      --bg-page:      #000000;
+      --bg-surface:   #000000;
+      --bg-sidebar:   #050505;
+      --border:       rgba(200, 150, 80, 0.10);
+      --text-primary: #F2E8D8;
+      --text-secondary: #907060;
+      --text-muted:   #604830;
+      --accent:       #F08040;
+      --accent-hover: #FF9050;
+      --accent-bg:    #1A0800;
+    }
+
+    /* ========================================
+       RESET & BASE
+       ======================================== */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: var(--font-size-body);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      line-height: var(--line-height-body);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* ========================================
+       TOP BAR — 48px fixed
+       ======================================== */
+
+    .topbar {
+      height: var(--topbar-h);
+      min-height: var(--topbar-h);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-family: var(--font-ui);
+      z-index: 100;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .topbar-brand {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+
+    .topbar-sep {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Buttons */
+    .btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .btn:hover {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .btn-hamburger {
+      font-size: 18px;
+      padding: 4px 8px;
+      display: none;
+    }
+
+    /* ========================================
+       PROGRESS BAR — 2px coral
+       ======================================== */
+
+    .progress-track {
+      height: 2px;
+      width: 100%;
+      background: transparent;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.15s linear;
+      border-radius: 0 1px 1px 0;
+    }
+    .theme-amoled .progress-fill {
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    /* ========================================
+       MAIN BODY — sidebar + content
+       ======================================== */
+
+    .app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ========================================
+       SIDEBAR — 260px desktop, drawer mobile
+       ======================================== */
+
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-ui);
+      overflow: hidden;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 49;
+    }
+
+    .sidebar-head {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-head h2 {
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .sidebar-head .author {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0 24px;
+    }
+    .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Volume / Arc / Section headers */
+    .toc-group-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 16px 20px 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .toc-group-header:hover { opacity: 0.8; }
+    .toc-group-header .chevron {
+      font-size: 8px;
+      transition: transform 0.2s ease;
+    }
+    .toc-group-header.collapsed .chevron {
+      transform: rotate(-90deg);
+    }
+
+    /* Collapsible chapter group */
+    .toc-group {
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+    .toc-group.collapsed {
+      max-height: 0 !important;
+    }
+
+    /* Chapter items */
+    .toc-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 9px 20px 9px 28px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.12s ease;
+      position: relative;
+    }
+    .toc-item:hover {
+      background: var(--accent-bg);
+    }
+    .toc-item.active {
+      border-left-color: var(--accent);
+      background: var(--accent-bg);
+    }
+    .toc-item-title {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+    .toc-item.active .toc-item-title {
+      font-weight: 500;
+      color: var(--accent);
+    }
+    .toc-item-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    /* ========================================
+       CONTENT AREA
+       ======================================== */
+
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      justify-content: center;
+      padding: 48px 32px 80px;
+      scroll-behavior: smooth;
+    }
+    .content-area::-webkit-scrollbar { width: 6px; }
+    .content-area::-webkit-scrollbar-track { background: transparent; }
+    .content-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .reader {
+      max-width: var(--content-max-w);
+      width: 100%;
+      opacity: 1;
+      transition: opacity 0.15s ease;
+    }
+    .reader.fading { opacity: 0; }
+
+    /* Chapter header */
+    .reader .chapter-number {
+      font-family: var(--font-display);
+      font-size: 72px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 80px;
+      margin-bottom: 8px;
+      opacity: 0.25;
+    }
+    .reader h1 {
+      font-family: var(--font-body);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+    .reader .chapter-subtitle {
+      font-family: var(--font-body);
+      font-size: 18px;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    /* Prose */
+    .reader p {
+      margin-bottom: 24px;
+    }
+
+    /* Drop cap on first paragraph */
+    .reader .drop-cap-target::first-letter {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 3.5em;
+      float: left;
+      line-height: 0.78;
+      margin: 4px 10px 0 0;
+      color: var(--accent);
+    }
+
+    .reader h2 {
+      font-family: var(--font-body);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin: 48px 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .reader h3 {
+      font-family: var(--font-body);
+      font-size: 18px;
+      font-weight: 600;
+      margin: 32px 0 12px;
+      color: var(--text-primary);
+    }
+
+    /* Pull quotes (blockquotes) */
+    .reader blockquote {
+      border-left: 2px solid var(--accent);
+      padding: 0 0 0 24px;
+      margin: 36px 0;
+      font-style: italic;
+      font-size: 1.12em;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    /* Section break (hr → dinkus) */
+    .reader hr {
+      border: none;
+      text-align: center;
+      margin: 48px 0;
+    }
+    .reader hr::after {
+      content: "⁂";
+      color: var(--text-muted);
+      font-size: 18px;
+      letter-spacing: 0.3em;
+    }
+
+    /* Links */
+    .reader a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .reader a:hover {
+      color: var(--accent-hover);
+    }
+
+    /* Images */
+    .reader img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 24px 0 8px;
+    }
+
+    /* Emphasis & strong */
+    .reader em { font-style: italic; }
+    .reader strong { font-weight: 600; }
+
+    /* Code */
+    .reader code {
+      font-size: 0.9em;
+      background: var(--accent-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .reader pre {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 24px 0;
+      font-size: 0.88em;
+      line-height: 1.6;
+    }
+    .reader pre code {
+      background: none;
+      padding: 0;
+    }
+
+    /* Lists */
+    .reader ul, .reader ol {
+      margin: 0 0 24px 24px;
+    }
+    .reader li {
+      margin-bottom: 8px;
+    }
+
+    /* ========================================
+       BOTTOM NAV BAR — 52px
+       ======================================== */
+
+    .bottombar {
+      height: var(--bottombar-h);
+      min-height: var(--bottombar-h);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-family: var(--font-ui);
+      z-index: 100;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .bottombar-center {
+      text-align: center;
+    }
+    .bottombar-status {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .bottombar-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       RESPONSIVE — Mobile < 768px
+       ======================================== */
+
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-w: 80vw;
+        --font-size-body: 16px;
+      }
+      .btn-hamburger { display: inline-flex; }
+      .topbar-sep, .topbar-title { display: none; }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: none;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(60, 30, 10, 0.12);
+      }
+      .sidebar-overlay.visible {
+        display: block;
+      }
+      .content-area {
+        padding: 32px 20px 64px;
+      }
+      .reader .chapter-number { font-size: 48px; line-height: 56px; }
+      .reader h1 { font-size: 26px; }
+      .reader .drop-cap-target::first-letter { font-size: 2.8em; }
+    }
+
+    /* Tablet 768–1024 */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      :root {
+        --sidebar-w: 220px;
+        --content-max-w: 560px;
+      }
+    }
+
+    /* ========================================
+       LOADING STATE
+       ======================================== */
+
+    .loading-msg {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====== TOP BAR ====== -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <button class="btn btn-hamburger" id="btn-hamburger" aria-label="Toggle sidebar">☰</button>
+      <span class="topbar-brand">folio</span>
+      <span class="topbar-sep"></span>
+      <span class="topbar-title" id="topbar-title">Loading…</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" id="btn-font-dec" aria-label="Decrease font size">A−</button>
+      <button class="btn" id="btn-font-inc" aria-label="Increase font size">A+</button>
+      <button class="btn" id="btn-theme" aria-label="Toggle theme">☀ Light</button>
+    </div>
+  </header>
+
+  <!-- ====== PROGRESS BAR ====== -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- ====== MAIN BODY ====== -->
+  <div class="app-body">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <h2 id="sidebar-book-title">Contents</h2>
+        <div class="author" id="sidebar-author"></div>
+      </div>
+      <nav class="sidebar-scroll" id="sidebar-scroll"></nav>
+    </aside>
+
+    <!-- Content -->
+    <main class="content-area" id="content-area">
+      <article class="reader" id="reader">
+        <div class="loading-msg">Loading book…</div>
+      </article>
+    </main>
+  </div>
+
+  <!-- ====== BOTTOM BAR ====== -->
+  <footer class="bottombar" id="bottombar">
+    <button class="btn" id="btn-prev" aria-label="Previous chapter">← Previous</button>
+    <div class="bottombar-center">
+      <div class="bottombar-status" id="bottom-status"></div>
+      <div class="bottombar-time" id="bottom-time"></div>
+    </div>
+    <button class="btn" id="btn-next" aria-label="Next chapter">Next →</button>
+  </footer>
+
+  <!-- ====== READER JS ====== -->
+  <script>
+  (function() {
+    'use strict';
+
+    // ──────────────────────────────────────
+    // CONFIG
+    // ──────────────────────────────────────
+    const BOOK_PATH = 'content/the-architecture-of-thought/';
+    const READING_WPM = 230;
+
+    // ──────────────────────────────────────
+    // STATE
+    // ──────────────────────────────────────
+    let chapters = [];
+    let currentIndex = -1;
+    let bookMeta = {};
+
+    const themes = ['light', 'dark', 'amoled'];
+    const themeLabels = { light: '☀ Light', dark: '☾ Dark', amoled: '✦ AMOLED' };
+    let fontSizeSteps = [15, 16, 17, 18, 19, 20, 22, 24];
+    let fontSizeIdx = 2; // default 17px
+
+    // ──────────────────────────────────────
+    // DOM refs
+    // ──────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const topbarTitle = $('topbar-title');
+    const sidebarEl = $('sidebar');
+    const sidebarScroll = $('sidebar-scroll');
+    const sidebarOverlay = $('sidebar-overlay');
+    const reader = $('reader');
+    const contentArea = $('content-area');
+    const progressFill = $('progress-fill');
+    const bottomStatus = $('bottom-status');
+    const bottomTime = $('bottom-time');
+
+    // ──────────────────────────────────────
+    // THEME
+    // ──────────────────────────────────────
+    function loadTheme() {
+      const saved = localStorage.getItem('folio-theme') || 'light';
+      setTheme(saved);
+    }
+
+    function setTheme(t) {
+      document.documentElement.className = 'theme-' + t;
+      $('btn-theme').textContent = themeLabels[t];
+      localStorage.setItem('folio-theme', t);
+    }
+
+    $('btn-theme').addEventListener('click', () => {
+      const cur = localStorage.getItem('folio-theme') || 'light';
+      const next = themes[(themes.indexOf(cur) + 1) % themes.length];
+      setTheme(next);
+    });
+
+    // ──────────────────────────────────────
+    // FONT SIZE
+    // ──────────────────────────────────────
+    function applyFontSize() {
+      document.documentElement.style.setProperty('--font-size-body', fontSizeSteps[fontSizeIdx] + 'px');
+    }
+    $('btn-font-inc').addEventListener('click', () => {
+      if (fontSizeIdx < fontSizeSteps.length - 1) { fontSizeIdx++; applyFontSize(); }
+    });
+    $('btn-font-dec').addEventListener('click', () => {
+      if (fontSizeIdx > 0) { fontSizeIdx--; applyFontSize(); }
+    });
+
+    // ──────────────────────────────────────
+    // SIDEBAR TOGGLE (mobile)
+    // ──────────────────────────────────────
+    function openSidebar() {
+      sidebarEl.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+    }
+    function closeSidebar() {
+      sidebarEl.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+    }
+    $('btn-hamburger').addEventListener('click', openSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // ──────────────────────────────────────
+    // INIT — fetch meta.md + toc.md
+    // ──────────────────────────────────────
+    async function init() {
+      loadTheme();
+
+      try {
+        // Parse meta.md
+        const metaRaw = await (await fetch(BOOK_PATH + 'meta.md')).text();
+        const fm = parseFrontmatter(metaRaw);
+        bookMeta = fm;
+        if (fm.title) {
+          topbarTitle.textContent = fm.title;
+          $('sidebar-book-title').textContent = fm.title;
+          document.title = 'folio — ' + fm.title;
+        }
+        if (fm.author) $('sidebar-author').textContent = 'by ' + fm.author;
+
+        // Parse toc.md
+        const tocRaw = await (await fetch(BOOK_PATH + 'toc.md')).text();
+        buildToc(tocRaw);
+
+        // Load initial chapter
+        const hash = decodeURIComponent(location.hash.replace('#', ''));
+        const hashIdx = chapters.findIndex(c => c.file === hash);
+        loadChapter(hashIdx >= 0 ? hashIdx : 0);
+      } catch (err) {
+        reader.innerHTML = '<div class="loading-msg">Failed to load book. Check console.</div>';
+        console.error(err);
+      }
+    }
+
+    // ──────────────────────────────────────
+    // PARSE YAML FRONTMATTER (simple)
+    // ──────────────────────────────────────
+    function parseFrontmatter(text) {
+      const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (!m) return {};
+      const obj = {};
+      m[1].split(/\r?\n/).forEach(line => {
+        const idx = line.indexOf(':');
+        if (idx > 0) {
+          const key = line.slice(0, idx).trim();
+          let val = line.slice(idx + 1).trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")))
+            val = val.slice(1, -1);
+          obj[key] = val;
+        }
+      });
+      return obj;
+    }
+
+    // ──────────────────────────────────────
+    // BUILD TOC SIDEBAR
+    // ──────────────────────────────────────
+    function buildToc(tocRaw) {
+      const lines = tocRaw.split(/\r?\n/);
+      sidebarScroll.innerHTML = '';
+      chapters = [];
+
+      let currentGroup = null;
+      let currentGroupEl = null;
+
+      lines.forEach(line => {
+        line = line.trim();
+
+        // Section heading → group header
+        if (line.startsWith('## ')) {
+          const label = line.slice(3).trim();
+
+          const header = document.createElement('div');
+          header.className = 'toc-group-header';
+          header.innerHTML = '<span>' + label + '</span><span class="chevron">▼</span>';
+
+          const group = document.createElement('div');
+          group.className = 'toc-group';
+
+          header.addEventListener('click', () => {
+            header.classList.toggle('collapsed');
+            if (group.classList.contains('collapsed')) {
+              group.classList.remove('collapsed');
+              group.style.maxHeight = group.scrollHeight + 'px';
+            } else {
+              group.style.maxHeight = group.scrollHeight + 'px';
+              requestAnimationFrame(() => { group.classList.add('collapsed'); });
+            }
+          });
+
+          sidebarScroll.appendChild(header);
+          sidebarScroll.appendChild(group);
+          currentGroupEl = group;
+          currentGroup = header;
+          return;
+        }
+
+        // Chapter entry
+        const match = line.match(/^-\s+\[(.+?)\]\((.+?)\)(?:\s*\|\s*(.+))?$/);
+        if (!match) return;
+
+        const ch = { title: match[1], file: match[2], subtitle: (match[3] || '').trim() };
+        const idx = chapters.length;
+        chapters.push(ch);
+
+        const item = document.createElement('div');
+        item.className = 'toc-item';
+        item.dataset.idx = idx;
+
+        let html = '<span class="toc-item-title">' + ch.title + '</span>';
+        if (ch.subtitle) html += '<span class="toc-item-sub">' + ch.subtitle + '</span>';
+        item.innerHTML = html;
+
+        item.addEventListener('click', () => {
+          loadChapter(idx);
+          closeSidebar();
+        });
+
+        if (currentGroupEl) {
+          currentGroupEl.appendChild(item);
+        } else {
+          sidebarScroll.appendChild(item);
+        }
+      });
+
+      // Set initial max-heights for groups
+      document.querySelectorAll('.toc-group').forEach(g => {
+        g.style.maxHeight = g.scrollHeight + 'px';
+      });
+    }
+
+    // ──────────────────────────────────────
+    // LOAD CHAPTER
+    // ──────────────────────────────────────
+    const chapterCache = {};
+
+    async function loadChapter(idx) {
+      if (idx < 0 || idx >= chapters.length) return;
+      const ch = chapters[idx];
+      currentIndex = idx;
+
+      // Update hash
+      history.replaceState(null, '', '#' + ch.file);
+
+      // Highlight active item
+      document.querySelectorAll('.toc-item').forEach(el => el.classList.remove('active'));
+      const activeItem = document.querySelector('.toc-item[data-idx="' + idx + '"]');
+      if (activeItem) {
+        activeItem.classList.add('active');
+        // Expand parent group if collapsed
+        const parentGroup = activeItem.closest('.toc-group');
+        if (parentGroup && parentGroup.classList.contains('collapsed')) {
+          parentGroup.classList.remove('collapsed');
+          parentGroup.style.maxHeight = parentGroup.scrollHeight + 'px';
+          const prevHeader = parentGroup.previousElementSibling;
+          if (prevHeader) prevHeader.classList.remove('collapsed');
+        }
+        // Scroll into view in sidebar
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+
+      // Fade out
+      reader.classList.add('fading');
+      await sleep(150);
+
+      try {
+        // Fetch (with cache)
+        if (!chapterCache[ch.file]) {
+          const res = await fetch(BOOK_PATH + ch.file);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          chapterCache[ch.file] = await res.text();
+        }
+        const raw = chapterCache[ch.file];
+
+        // Parse frontmatter
+        const fm = parseFrontmatter(raw);
+        const body = raw.replace(/^---[\s\S]*?---\s*/, '');
+
+        // Render
+        let html = '';
+
+        // Chapter number display
+        if (fm.chapter && fm.chapter !== '0') {
+          html += '<div class="chapter-number">' + fm.chapter.padStart(2, '0') + '</div>';
+        }
+
+        html += '<h1>' + (fm.title || ch.title) + '</h1>';
+        if (fm.subtitle || ch.subtitle) {
+          html += '<div class="chapter-subtitle">' + (fm.subtitle || ch.subtitle) + '</div>';
+        }
+
+        html += marked.parse(body);
+        reader.innerHTML = html;
+
+        // Apply drop cap to first <p>
+        const firstP = reader.querySelector('p');
+        if (firstP) firstP.classList.add('drop-cap-target');
+
+        // Update bottom bar
+        updateBottomBar(fm);
+
+      } catch (err) {
+        reader.innerHTML = '<div class="loading-msg">Error loading chapter: ' + err.message + '</div>';
+        console.error(err);
+      }
+
+      // Reset scroll and fade in
+      contentArea.scrollTop = 0;
+      reader.classList.remove('fading');
+      updateProgress();
+    }
+
+    function updateBottomBar(fm) {
+      bottomStatus.textContent = (currentIndex + 1) + ' of ' + chapters.length;
+
+      const words = parseInt(fm.words) || countWords(reader.textContent);
+      const mins = Math.ceil(words / READING_WPM);
+      bottomTime.textContent = '~' + mins + ' min read';
+    }
+
+    function countWords(text) {
+      return text.trim().split(/\s+/).length;
+    }
+
+    // ──────────────────────────────────────
+    // PROGRESS BAR
+    // ──────────────────────────────────────
+    contentArea.addEventListener('scroll', updateProgress, { passive: true });
+
+    function updateProgress() {
+      const el = contentArea;
+      const max = el.scrollHeight - el.clientHeight;
+      if (max <= 0) { progressFill.style.width = '0%'; return; }
+
+      // Combine overall book progress + chapter scroll
+      const chapterFrac = el.scrollTop / max;
+      const bookPct = ((currentIndex + chapterFrac) / chapters.length) * 100;
+      progressFill.style.width = Math.min(bookPct, 100).toFixed(1) + '%';
+    }
+
+    // ──────────────────────────────────────
+    // PREV / NEXT NAVIGATION
+    // ──────────────────────────────────────
+    $('btn-prev').addEventListener('click', () => loadChapter(currentIndex - 1));
+    $('btn-next').addEventListener('click', () => loadChapter(currentIndex + 1));
+
+    // ──────────────────────────────────────
+    // KEYBOARD NAVIGATION
+    // ──────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case 'ArrowRight': case 'l': case 'L':
+          contentArea.scrollBy({ top: contentArea.clientHeight * 0.85, behavior: 'smooth' });
+          break;
+        case 'ArrowLeft': case 'h': case 'H':
+          contentArea.scrollBy({ top: -contentArea.clientHeight * 0.85, behavior: 'smooth' });
+          break;
+        case 'n': case 'N':
+          loadChapter(currentIndex + 1);
+          break;
+        case 'p': case 'P':
+          loadChapter(currentIndex - 1);
+          break;
+        case 't': case 'T':
+          if (window.innerWidth <= 768) {
+            sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+          }
+          break;
+        case 'Escape':
+          closeSidebar();
+          break;
+      }
+    });
+
+    // ──────────────────────────────────────
+    // TOUCH / SWIPE (mobile)
+    // ──────────────────────────────────────
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    contentArea.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    contentArea.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+
+      if (dx > 0 && touchStartX < 40) {
+        openSidebar(); // swipe right from edge
+      }
+    }, { passive: true });
+
+    // ──────────────────────────────────────
+    // HASH CHANGE
+    // ──────────────────────────────────────
+    window.addEventListener('hashchange', () => {
+      const hash = decodeURIComponent(location.hash.replace('#', ''));
+      const idx = chapters.findIndex(c => c.file === hash);
+      if (idx >= 0 && idx !== currentIndex) loadChapter(idx);
+    });
+
+    // ──────────────────────────────────────
+    // UTIL
+    // ──────────────────────────────────────
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ──────────────────────────────────────
+    // GO
+    // ──────────────────────────────────────
+    init();
+  })();
+  </script>
+</body>
+</html>
