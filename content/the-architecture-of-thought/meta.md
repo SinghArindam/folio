@@ -2,7 +2,7 @@
 title: The Architecture of Thought
 author: Arindam
 subtitle: An inquiry into perception, memory, cognition, and the stories we tell ourselves
-cover: assets/images/shared/cover.jpg
+cover: assets/images/shared/cover.svg
 language: en
 year: 2025
 ---

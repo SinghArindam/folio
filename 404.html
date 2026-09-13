@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found — folio</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <style>
+    :root {
+      --bg: #FAF7F2;
+      --text: #1E160A;
+      --muted: #6B5438;
+      --accent: #C4572A;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #17110A;
+        --text: #EAE0D2;
+        --muted: #9C7E5C;
+        --accent: #E07A4A;
+      }
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Lora', Georgia, serif;
+      text-align: center;
+      padding: 24px;
+    }
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 64px;
+      margin: 0 0 12px;
+      color: var(--accent);
+    }
+    p {
+      color: var(--muted);
+      font-size: 18px;
+      margin: 0 0 24px;
+    }
+    a {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    a:hover {
+      opacity: 0.9;
+    }
+  </style>
+  <script>
+    // If visited with a hash or subpath, attempt redirect to main index
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+    // Redirect back to root of repository
+    const segments = path.split('/').filter(Boolean);
+    const repoBase = segments.length > 0 && !path.endsWith('.html') ? '/' + segments[0] + '/' : './';
+    if (hash) {
+      window.location.replace(repoBase + hash);
+    }
+  </script>
+</head>
+<body>
+  <h1>404</h1>
+  <p>The page or chapter you are looking for does not exist.</p>
+  <a href="./index.html">Return to Book</a>
+</body>
+</html>
