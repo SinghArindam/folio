@@ -1,0 +1,8 @@
+# robots.txt for folio — The Architecture of Thought by Arindam
+# Canonical URL: https://singharindam.github.io/folio/
+
+User-agent: *
+Allow: /
+
+# Sitemap Index
+Sitemap: https://singharindam.github.io/folio/sitemap.xml

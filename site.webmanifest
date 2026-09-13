@@ -1,0 +1,27 @@
+{
+  "name": "folio — Magazine-Styled Static Book Reader",
+  "short_name": "folio",
+  "description": "A blazing-fast, magazine-styled static book reader for Markdown content hosted on GitHub Pages. Zero build steps, beautiful typography, and theme customization.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#FAF7F2",
+  "icons": [
+    {
+      "src": "assets/images/shared/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/shared/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/shared/og-cover.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ]
+}
